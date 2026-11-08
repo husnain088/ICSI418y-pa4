@@ -2,8 +2,8 @@ import { useState } from "react";
 import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
 import CreateProject from "./components/CreateProject.jsx";
-import ProjectList from "./components/ProjectList.jsx";
-import ProjectMembers from "./components/ProjectMembers.jsx";
+import ProjectList from "./components/Projectlist.jsx";
+import ProjectMembers from "./components/Projectmembers.jsx";
 import "./App.css";
 
 const TABS = [
