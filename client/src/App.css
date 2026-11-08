@@ -281,6 +281,13 @@ textarea {
   }
 }
 
+
+/* PA4 uses the existing colors, fields, buttons, and story list styles. */
+.tabs { flex-wrap: wrap; row-gap: 14px; }
+.story-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.story-actions { display: flex; gap: 10px; }
+.story-cancel { margin-top: 12px; }
+
 @media (max-width: 420px) {
   .name-row {
     grid-template-columns: 1fr;

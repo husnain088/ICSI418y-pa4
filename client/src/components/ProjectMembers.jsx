@@ -175,7 +175,7 @@ function ProjectMembers() {
         </>
       )}
 
-      {message && <p className={`status ${status}`}>{message}</p>}
+      {message && <p className={`status ${status}`} role={status === "error" ? "alert" : "status"}>{message}</p>}
     </div>
   );
 }

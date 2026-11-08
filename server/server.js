@@ -14,6 +14,14 @@ const client = new MongoClient(process.env.MONGO_URI);
 let users;
 let projects;
 let projectMemberships;
+let userStories;
+
+const PRIORITIES = ["High", "Medium", "Low"];
+const STORY_STATUSES = ["To Do", "In Progress", "Done"];
+
+// "As a [user], I want [goal], so that [benefit]." Deliberately lenient: it only
+// checks the three parts are present, not that the wording makes sense.
+const STORY_FORMAT = /^as an? .+,?\s+i want .+,?\s+so that .+/is;
 
 // The three statuses a project is allowed to have
 const VALID_STATUSES = ["Planning", "Active", "Completed"];
@@ -38,6 +46,9 @@ async function connectDatabase() {
     users = db.collection("users");
     projects = db.collection("projects");
     projectMemberships = db.collection("projectMemberships");
+    userStories = db.collection("UserStories");
+    // Speeds up "all stories of one project" and the member-removal check.
+    await userStories.createIndex({ project_id: 1 });
   } catch (error) {
     console.error("Could not connect to MongoDB");
     console.error(error);
@@ -56,7 +67,7 @@ app.get("/", (req, res) => {
 // Signup route
 app.post("/signup", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { f_name, l_name, username, password } = req.body ?? {};
 
     // Check required fields
     if (!username || !password) {
@@ -76,6 +87,8 @@ app.post("/signup", async (req, res) => {
 
     // Create the user
     await users.insertOne({
+      f_name: typeof f_name === "string" ? f_name.trim() : "",
+      l_name: typeof l_name === "string" ? l_name.trim() : "",
       username: username,
       password: password
     });
@@ -94,7 +107,7 @@ app.post("/signup", async (req, res) => {
 // Login route
 app.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password } = req.body ?? {};
 
     // Check required fields
     if (!username || !password) {
@@ -155,7 +168,7 @@ app.get("/api/users", async (req, res) => {
 // Create a project. The Project Lead is also added as its first member.
 app.post("/api/projects", async (req, res) => {
   try {
-    const { name, description, status, project_lead_id } = req.body;
+    const { name, description, status, project_lead_id } = req.body ?? {};
 
     // Check required fields
     if (
@@ -279,7 +292,7 @@ app.get("/api/projects/:projectId/members", async (req, res) => {
 app.post("/api/projects/:projectId/members", async (req, res) => {
   try {
     const projectId = toObjectId(req.params.projectId);
-    const userId = toObjectId(req.body.user_id);
+    const userId = toObjectId(req.body?.user_id);
 
     if (projectId === null) {
       return res.status(400).json({
@@ -368,6 +381,19 @@ app.delete("/api/projects/:projectId/members/:userId", async (req, res) => {
       });
     }
 
+    // PA4: a member cannot be removed while any story in THIS project is
+    // assigned to them. Done stories count, so there is no status filter.
+    const assignedStory = await userStories.findOne({
+      project_id: projectId,
+      assigned_user_id: userId
+    });
+
+    if (assignedStory) {
+      return res.status(409).json({
+        message: "Reassign, unassign, or delete this member's stories before removing them from the project."
+      });
+    }
+
     const result = await projectMemberships.deleteOne({
       project_id: projectId,
       user_id: userId
@@ -390,7 +416,137 @@ app.delete("/api/projects/:projectId/members/:userId", async (req, res) => {
   }
 });
 
+// PA4: validate relationships before reading or changing a story.
+async function storyProject(req, res, next) {
+  try {
+    const projectId = toObjectId(req.params.projectId);
+    if (!projectId) {
+      return res.status(400).json({ message: "Invalid project identifier." });
+    }
+    if (!await projects.findOne({ _id: projectId })) {
+      return res.status(404).json({ message: "Project not found." });
+    }
+    req.projectId = projectId;
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+async function validateStory(body, editing) {
+  if (!body || typeof body.title !== "string" || !body.title.trim() ||
+      typeof body.description !== "string" || !body.description.trim()) {
+    return { error: "Title and description are required.", code: 400 };
+  }
+  if (body.title.trim().length > 100) {
+    return { error: "Title must be 100 characters or fewer.", code: 400 };
+  }
+  if (body.description.trim().length > 1000) {
+    return { error: "Description must be 1000 characters or fewer.", code: 400 };
+  }
+  if (!STORY_FORMAT.test(body.description.trim())) {
+    return { error: "Description must use the format: As a [type of user], I want [goal], so that [benefit].", code: 400 };
+  }
+  if (!PRIORITIES.includes(body.priority)) {
+    return { error: "Priority must be High, Medium, or Low.", code: 400 };
+  }
+  if (editing && !STORY_STATUSES.includes(body.status)) {
+    return { error: "Status must be To Do, In Progress, or Done.", code: 400 };
+  }
+  const assignedId = body.assigned_user_id === null ? null : toObjectId(body.assigned_user_id);
+  if (body.assigned_user_id !== null && !assignedId) {
+    return { error: "Select a valid assigned member or Unassigned.", code: 400 };
+  }
+  if (assignedId && !await users.findOne({ _id: assignedId })) {
+    return { error: "Assigned user not found.", code: 404 };
+  }
+  return { values: {
+    title: body.title.trim(), description: body.description.trim(),
+    priority: body.priority, status: editing ? body.status : "To Do",
+    assigned_user_id: assignedId
+  } };
+}
+
+async function validAssignment(projectId, userId) {
+  return userId === null || Boolean(await projectMemberships.findOne({
+    project_id: projectId, user_id: userId
+  }));
+}
+
+app.get("/api/projects/:projectId/stories", storyProject, async (req, res) => {
+  try {
+    const stories = await userStories.find({ project_id: req.projectId }).toArray();
+    res.json(stories);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/api/projects/:projectId/stories", storyProject, async (req, res) => {
+  try {
+    const checked = await validateStory(req.body, false);
+    if (checked.error) return res.status(checked.code).json({ message: checked.error });
+    if (!await validAssignment(req.projectId, checked.values.assigned_user_id)) {
+      return res.status(400).json({ message: "Assigned user must be a member of this project." });
+    }
+    // Never insert the request body directly. Status and project come from the server.
+    const story = { project_id: req.projectId, ...checked.values };
+    const result = await userStories.insertOne(story);
+    res.status(201).json({ message: "Story created successfully", story: { ...story, _id: result.insertedId } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.put("/api/projects/:projectId/stories/:storyId", storyProject, async (req, res) => {
+  try {
+    const storyId = toObjectId(req.params.storyId);
+    if (!storyId) return res.status(400).json({ message: "Invalid story identifier." });
+    const query = { _id: storyId, project_id: req.projectId };
+    if (!await userStories.findOne(query)) {
+      return res.status(404).json({ message: "Story not found in this project." });
+    }
+    if (req.body && Object.hasOwn(req.body, "project_id") && req.body.project_id !== req.params.projectId) {
+      return res.status(400).json({ message: "A story cannot be moved to another project." });
+    }
+    const checked = await validateStory(req.body, true);
+    if (checked.error) return res.status(checked.code).json({ message: checked.error });
+    if (!await validAssignment(req.projectId, checked.values.assigned_user_id)) {
+      return res.status(400).json({ message: "Assigned user must be a member of this project." });
+    }
+    const result = await userStories.updateOne(query, { $set: checked.values });
+    if (!result.matchedCount) return res.status(404).json({ message: "Story not found in this project." });
+    res.json({ message: "Story updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.delete("/api/projects/:projectId/stories/:storyId", storyProject, async (req, res) => {
+  try {
+    const storyId = toObjectId(req.params.storyId);
+    if (!storyId) return res.status(400).json({ message: "Invalid story identifier." });
+    const result = await userStories.deleteOne({ _id: storyId, project_id: req.projectId });
+    if (!result.deletedCount) return res.status(404).json({ message: "Story not found in this project." });
+    res.json({ message: "Story deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Keep malformed JSON errors readable as well.
+app.use((error, req, res, next) => {
+  if (error.type === "entity.parse.failed") {
+    return res.status(400).json({ message: "Request body must be valid JSON." });
+  }
+  next(error);
+});
+
 app.listen(9000, () => {
   console.log("Server running on port 9000");
 });
-//

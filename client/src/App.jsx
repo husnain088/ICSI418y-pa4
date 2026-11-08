@@ -2,8 +2,9 @@ import { useState } from "react";
 import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
 import CreateProject from "./components/CreateProject.jsx";
-import ProjectList from "./components/Projectlist.jsx";
-import ProjectMembers from "./components/Projectmembers.jsx";
+import ProjectList from "./components/ProjectList.jsx";
+import ProjectMembers from "./components/ProjectMembers.jsx";
+import ProjectBacklog from "./components/ProjectBacklog.jsx";
 import "./App.css";
 
 const TABS = [
@@ -11,7 +12,8 @@ const TABS = [
   { id: "signup", label: "Sign up" },
   { id: "create", label: "Create project" },
   { id: "projects", label: "Projects" },
-  { id: "members", label: "Members" }
+  { id: "members", label: "Members" },
+  { id: "backlog", label: "Backlog" }
 ];
 
 function App() {
@@ -41,6 +43,7 @@ function App() {
           {activeTab === "create" && <CreateProject />}
           {activeTab === "projects" && <ProjectList />}
           {activeTab === "members" && <ProjectMembers />}
+          {activeTab === "backlog" && <ProjectBacklog />}
         </div>
       </div>
     </main>
