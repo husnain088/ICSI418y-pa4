@@ -1,0 +1,289 @@
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* --- Tabs --- */
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 0 2px 12px;
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  color: var(--navy);
+  border-bottom: 2px solid var(--gold);
+}
+
+/* --- Heading above each form --- */
+
+.form-heading {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.form-heading h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+
+.form-heading p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* --- Fields --- */
+
+.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 22px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.field-input {
+  width: 100%;
+  padding: 8px 2px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  font-size: 15px;
+  color: var(--navy);
+}
+
+.field-input:focus-visible {
+  border-bottom-color: var(--gold);
+}
+
+/* --- Submit --- */
+
+.submit {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid var(--navy);
+  background: var(--navy);
+  color: var(--cream);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.submit:hover {
+  background: var(--navy-soft);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* --- Status message --- */
+
+.status {
+  text-align: center;
+  font-size: 13px;
+  margin: 18px 0 0;
+}
+
+.status.error {
+  color: var(--error);
+}
+
+.status.success {
+  color: var(--success);
+}
+
+.card.wide {
+  max-width: 1000px;
+}
+
+.projects-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.panel {
+  min-width: 0;
+}
+
+.panel h2,
+.memberships h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 26px;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.section-heading h2,
+.section-heading h3 {
+  margin: 0;
+}
+
+.project-list {
+  margin-bottom: 24px;
+}
+
+.project-item {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.project-item.selected {
+  border-bottom-color: var(--gold);
+}
+
+.project-item h3 {
+  margin: 10px 0;
+}
+
+.description {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--line);
+  color: var(--navy);
+  font-size: 11px;
+  border-radius: 3px;
+}
+
+.member-list .badge {
+  margin-left: 8px;
+}
+
+.panel button:not(.submit) {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--navy);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.panel button:not(.submit):hover:not(:disabled) {
+  border-color: var(--gold);
+}
+
+.panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.memberships {
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.member-list {
+  padding: 0;
+  list-style: none;
+}
+
+.member-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.member-list li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.member-list li button {
+  flex-shrink: 0;
+}
+
+select,
+textarea {
+  font-family: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+@media (max-width: 760px) {
+  .projects-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .tabs {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .name-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

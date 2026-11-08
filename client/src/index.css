@@ -1,0 +1,46 @@
+:root {
+  --navy: #1c2b3a;
+  --navy-soft: #2c4258;
+  --cream: #faf6ee;
+  --gold: #b68a3e;
+  --line: #ddd3c0;
+  --text-muted: #7c7568;
+  --error: #a33b2c;
+  --success: #3f6b4f;
+
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--cream);
+  color: var(--navy);
+  font-family: var(--font-body);
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
