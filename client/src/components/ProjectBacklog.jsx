@@ -176,7 +176,6 @@ function Backlog({ projectId }) {
 
   if (loading) return <p className="muted">Loading stories and members...</p>;
 
-  // Do not offer a form with an empty member list when the data did not load.
   if (loadFailed) return <p className="status error" role="alert">{message}</p>;
 
   return (
